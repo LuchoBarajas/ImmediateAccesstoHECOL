@@ -14,7 +14,7 @@ library(openxlsx)
 library(stringr)
 library(lubridate)
 
-setwd("/Users/luchobarajas/Documents/OneDrive - London School of Economics/Capstone Project/Data and Descriptives")
+setwd("/Users/luchobarajas/Documents/OneDrive - London School of Economics/Capstone Project/ImmediateAccesstoHECOL/Data and Descriptives/")
 
 # Data base loading
 
@@ -44,7 +44,7 @@ data_ti %<>% select(Strata_ICFES = fami_estratovivienda, Fathers_education = fam
                     Program_type = t_METODOLOGIA_PROGRAMA, Program_Dpto = t_DEPARTAMENTO_PROGRAMA, 
                     Program_Cod_Dpto = t_CODIGO_MUNICIPIO_PROGRAMA,
                     Program_mun = t_MUNICIPIO_PROGRAMA, Program_Area = t_Ã.rea, Sisben_Score = puntaje_sisben_3,
-                    SEI_Student = estu_inse_individual, SL_Student = estu_nse_individual)
+                    SL_Student = estu_nse_individual)
 
 
 # Age Calculation
@@ -82,18 +82,152 @@ data_ti$Program_mun %<>% str_replace_all("iº", "u")
 data_ti$Program_mun %<>% str_replace_all("i¼", "ü")
 data_ti$Reading_time %<>% str_replace_all("ÃƒÂ¡", "a")
 
-# Re-coding Variables
+# Re-coding Variables: correcting errors in database and creating factors when needed
 
-data_ti %<>% select(-Strata_ICFES) # Se elimina el Estrato del ICFES por mayor completitud en SIMAT
-data_ti$Fathers_education %<>% str_replace("No sabe", "") # se remplaza el No sabe por missing
-data_ti$Mothers_education %<>% str_replace("No sabe", "") # se remplaza el No sabe por missing
+data_ti %<>% select(-Strata_ICFES) # Eliminating ICFES Strata due to a mayor availability of information in SIMAT Strata
+
+# Fathers Education: replacing not information and errir categories for missing values/translating
+
+table(data_ti$Fathers_education)
+data_ti$Fathers_education %<>% str_replace("No sabe", "") 
+data_ti$Fathers_education %<>% str_replace("No Aplica", "")
+
+data_ti$Fathers_education %<>% str_replace("Ninguno", "None")
+data_ti$Fathers_education %<>% str_replace("Primaria incompleta", "Incomplete primary")
+data_ti$Fathers_education %<>% str_replace("Primaria completa", "Complete primary")
+data_ti$Fathers_education %<>% str_replace("Secundaria \\(Bachillerato\\) incompleta", "Incomplete secondary")
+data_ti$Fathers_education %<>% str_replace("Secundaria \\(Bachillerato\\) completa", "Complete secondary")
+data_ti$Fathers_education %<>% str_replace("Tecnica o tecnologica incompleta", "Incomplete technical education")
+data_ti$Fathers_education %<>% str_replace("Tecnica o tecnologica completa", "Complete technical education")
+data_ti$Fathers_education %<>% str_replace("Educacion profesional incompleta", "Incomplete undergraduated degree")
+data_ti$Fathers_education %<>% str_replace("Educacion profesional completa", "Complete undergraduate degree")
+data_ti$Fathers_education %<>% str_replace("Postgrado", "Graduate degree")
+
+data_ti$Fathers_education %<>% factor(levels = c("None","Incomplete primary","Complete primary","Incomplete secondary",
+                                                 "Complete secondary","Incomplete technical education",
+                                                 "Complete technical education", "Incomplete undergraduated degree",
+                                                 "Complete undergraduate degree", "Graduate degree"))
+
+
+# Mothers Education: replacing not information and errir categories for missing values/translating
+
+table(data_ti$Mothers_education)
+data_ti$Mothers_education %<>% str_replace("No sabe", "") 
+data_ti$Mothers_education %<>% str_replace("No Aplica", "")
+
+data_ti$Mothers_education %<>% str_replace("Ninguno", "None")
+data_ti$Mothers_education %<>% str_replace("Primaria incompleta", "Incomplete primary")
+data_ti$Mothers_education %<>% str_replace("Primaria completa", "Complete primary")
+data_ti$Mothers_education %<>% str_replace("Secundaria \\(Bachillerato\\) incompleta", "Incomplete secondary")
+data_ti$Mothers_education %<>% str_replace("Secundaria \\(Bachillerato\\) completa", "Complete secondary")
+data_ti$Mothers_education %<>% str_replace("Tecnica o tecnologica incompleta", "Incomplete technical education")
+data_ti$Mothers_education %<>% str_replace("Tecnica o tecnologica completa", "Complete technical education")
+data_ti$Mothers_education %<>% str_replace("Educacion profesional incompleta", "Incomplete undergraduated degree")
+data_ti$Mothers_education %<>% str_replace("Educacion profesional completa", "Complete undergraduate degree")
+data_ti$Mothers_education %<>% str_replace("Postgrado", "Graduate degree")
+
+data_ti$Mothers_education %<>% factor(levels = c("None","Incomplete primary","Complete primary","Incomplete secondary",
+                                                 "Complete secondary","Incomplete technical education",
+                                                 "Complete technical education", "Incomplete undergraduated degree",
+                                                 "Complete undergraduate degree", "Graduate degree"))
+
+# Internet: Transforming the variable into a factor, correcting mistakes of the data
+
+table(data_ti$Internet)
 data_ti %<>% mutate(Internet = ifelse(Internet == "Si", 1, 0)) # 1 si tiene internet, 0 si no
+data_ti$Internet %<>% factor(labels= c("No", "Yes"))
+
+# Computer: Transforming the variable into a factor, correcting mistakes of the data
+
+table(data_ti$Computer)
 data_ti %<>% mutate(Computer = ifelse(Computer == "Si", 1, 0)) # 0 si tiene internet, 0 si no
-data_ti$Reading_time %<>% str_replace_all("Igual", "") # Se elimina la categoria igual. Es error y se cambia por missing
-data_ti %<>% mutate(Reading_performance = if_else(Reading_performance > 4, NA_real_, Reading_performance)) # Se elimina la categoria 14. Es un error
+data_ti$Computer %<>% factor(labels= c("No", "Yes"))
+
+# Reading Time: Transforming the variable into a factor
+
+table(data_ti$Reading_time)
+data_ti$Reading_time %<>% str_replace_all("Igual", "") 
+data_ti$Reading_time %<>% str_replace_all("30 minutos o menos", "30 min or less") 
+data_ti$Reading_time %<>% str_replace_all("Entre 30 y 60 minutos", "30 to 60 minutes") 
+data_ti$Reading_time %<>% str_replace_all("Entre 1 y 2 horas", "1 to 2 hours") 
+data_ti$Reading_time %<>% str_replace_all("Mas de 2 horas", "More than 2 hours") 
+data_ti$Reading_time %<>% str_replace_all("No leo por entretenimiento", "Does not read foe enternainment") 
+
+data_ti$Reading_time %<>% factor(levels = c("More than 2 hours", "1 to 2 hours", "30 to 60 minutes", "30 min or less",
+                                            "Does not read foe enternainment"))
+
+# Standardized test results
+
+table(data_ti$Reading_performance)
+data_ti %<>% mutate(Reading_performance = if_else(Reading_performance > 4, NA_real_, Reading_performance)) 
+
+table(data_ti$Math_performance)
 data_ti %<>% mutate(Math_performance = if_else(Math_performance > 4, NA_real_, Math_performance))
+
+table(data_ti$NaturalSci_performance)
 data_ti %<>% mutate(NaturalSci_performance = if_else(NaturalSci_performance  > 4, NA_real_, NaturalSci_performance))
+
+table(data_ti$English_performance)
 data_ti$English_performance %<>% str_replace_all("34", "")
+
+table(data_ti$English_performance)
+data_ti$English_performance %<>% factor(levels = c("B+","B1","A2","A1","A-"))
+
+# Strata SIMAT: Replacing Strata 0 and 9 for missing considering these strata do nor exist.
+
+table(data_ti$Strata_SIMAT)
+data_ti %<>% mutate(SEStrata = if_else(Strata_SIMAT == 0|Strata_SIMAT == 9, NA_real_, Strata_SIMAT))
+data_ti %<>% select(-Strata_SIMAT)
+
+# Sex: 
+
 data_ti %<>% mutate(Sex = if_else(Sex == "F", "Female","Male"))
+data_ti$Sex %<>% factor()
+
+# Rurality
+
+table(data_ti$Rurality)
+data_ti$Rurality %<>% factor(labels= c("Urban", "Rural"))
+
+# School Sector
+
+table(data_ti$School_sector)
+data_ti$School_sector %<>% factor(labels= c("Public", "Private"))
+
+# Other Variables
+
+data_ti$Dpto_School %<>% factor()
+data_ti$Sisben_Score %<>% as.numeric()
+
+# Response Variable (s): the response variable indicates weather the student accessed intermediate or not to higher education
+
+data_ti %<>% mutate(Immediate_Access = if_else(is.na(GID_HEI), 0,1))
+
+# HEI Level
+
+table(data_ti$Sector_HEI)
+data_ti %<>% mutate(Sector_HEI = if_else(Sector_HEI == "OFICIAL", "Public", 
+                                         if_else(Sector_HEI == "PRIVADA", "Private", Sector_HEI)))
+data_ti$Sector_HEI %<>% factor()
+
+table(data_ti$HEI_Character)
+
+data_ti$HEI_Character %<>% str_replace_all("Universidad", "University")
+data_ti$HEI_Character %<>% str_replace_all("Institucion Universitaria/Escuela Tecnologica", "University Institution/Technology School")
+data_ti$HEI_Character %<>% str_replace_all("Institucion Tecnologica", "Technological Institution")
+data_ti$HEI_Character %<>% str_replace_all("Institucion Tecnica Profesional", "Technical Institution")
+
+data_ti$HEI_Character %<>% factor(levels = c("University", "University Institution/Technology School",
+                                                "Technological Institution", "Technical Institution"))
+
+# Academic Program 
+
+table(data_ti$Program_level)
+data_ti$Program_level %<>% str_replace_all("Especializacion tecnologica", "Technological")
+data_ti$Program_level %<>% str_replace_all("Tecnologico", "Technological")
+data_ti$Program_level %<>% str_replace_all("Formacion tecnica profesional", "Technical")
+data_ti$Program_level %<>% str_replace_all("Universitario", "Universitary")
+
+data_ti$Program_level %<>% factor(levels = c("Universitary", "Technological", "Technical"))
 
 
