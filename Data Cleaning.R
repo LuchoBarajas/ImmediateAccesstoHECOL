@@ -1,5 +1,5 @@
 ########################################################
-#   Dissertation Data Set - Exploratory Data Analysis  #
+#       Dissertation Data Set - Data Cleaning          #
 ########################################################
 
 # Erase everything
@@ -22,7 +22,11 @@ data_ti <- read.csv2("prueba_2.csv", encoding = "UTF-8")
 
 # Feature Selection 
 
-data_ti %<>% select(Strata_ICFES = fami_estratovivienda, Fathers_education = fami_educacionpadre,
+data_ti %<>% select(Date_of_Birth = t_FECHA_NACIMIENTO,Sex = t_GENERO,
+                    Strata_ICFES = fami_estratovivienda,
+                    Strata_SIMAT = t_ESTRATO, Sisben_Score = puntaje_sisben_3,
+                    SL_Student = estu_nse_individual,
+                    Fathers_education = fami_educacionpadre,
                     Mothers_education = fami_educacionmadre, Internet = fami_tieneinternet,
                     Computer = fami_tienecomputador, Reading_time = estu_dedicacionlecturadiaria,
                     Reading_percentile = percentil_lectura_critica, 
@@ -35,16 +39,11 @@ data_ti %<>% select(Strata_ICFES = fami_estratovivienda, Fathers_education = fam
                     SocialSci_performance = desemp_sociales_ciudadanas, English_score = punt_ingles,
                     English_percentile = percentil_ingles, English_performance = desemp_ingles,
                     Global_score = punt_global,Global_percentile = percentil_global,
-                    Strata_SIMAT = t_ESTRATO, Date_of_Birth = t_FECHA_NACIMIENTO, 
-                    Sex = t_GENERO, Rurality = t_ZON_ALU,Dpto_School = t_DPTO_CARGA,
+                    Rurality = t_ZON_ALU,Cod_dpto_School = t_DPTO_CARGA,
                     School_sector = t_CTE_ID_SECTOR,Cod_mun_School =t_Divipola_MUNICIPIO,
-                    ID_HEI = t_ID_IES, GID_HEI = t_IES_PADRE, Sector_HEI = t_ORIGEN_IES, 
-                    HEI_Character = t_CARACTER_IES,Program_ID = t_CODIGO_PROGRAMA, Program = t_PROGRAMA,
-                    Program_level = t_MODALIDAD_PROGRAMA,
-                    Program_type = t_METODOLOGIA_PROGRAMA, Program_Dpto = t_DEPARTAMENTO_PROGRAMA, 
-                    Program_Cod_Dpto = t_CODIGO_MUNICIPIO_PROGRAMA,
-                    Program_mun = t_MUNICIPIO_PROGRAMA, Program_Area = t_Ã.rea, Sisben_Score = puntaje_sisben_3,
-                    SL_Student = estu_nse_individual)
+                    HEI_ID_= t_ID_IES, HEI_GID = t_IES_PADRE, HEI_Sector = t_ORIGEN_IES, 
+                    HEI_Character = t_CARACTER_IES,
+                    Program_level = t_MODALIDAD_PROGRAMA)
 
 
 # Age Calculation
@@ -61,25 +60,10 @@ data_ti$Fathers_education %<>% str_replace_all("EducaciÃƒÂ³n", "Educacion")
 data_ti$Fathers_education %<>% str_replace_all("TÃƒÂ©cnica o tecnolÃƒÂ³gica", "Tecnica o tecnologica")
 data_ti$Mothers_education %<>% str_replace_all("EducaciÃƒÂ³n", "Educacion")
 data_ti$Mothers_education %<>% str_replace_all("TÃƒÂ©cnica o tecnolÃƒÂ³gica", "Tecnica o tecnologica")
-data_ti$Program_Dpto %<>% str_replace_all("Ã©", "e")
-data_ti$Program_Dpto %<>% str_replace_all("Ã¡", "a")
-data_ti$Program_Dpto %<>% str_replace_all("Ã", "i")
-data_ti$Program_Dpto %<>% str_replace_all("i³", "o")
 data_ti$Program_level %<>% str_replace_all("Ã³", "o")
 data_ti$Program_level %<>% str_replace_all("Ã©", "e")
 data_ti$HEI_Character %<>% str_replace_all("Ã³","o")
 data_ti$HEI_Character %<>% str_replace_all("Ã©","e")
-data_ti$Program_Area %<>% str_replace_all("Ã³","o")
-data_ti$Program_Area %<>% str_replace_all("Ã¡","a")
-data_ti$Program_Area %<>% str_replace_all("Ã³","o")
-data_ti$Program_Area %<>% str_replace_all("Ã","i")
-data_ti$Program_mun %<>% str_replace_all("Ã©", "e")
-data_ti$Program_mun %<>% str_replace_all("Ã¡", "a")
-data_ti$Program_mun %<>% str_replace_all("Ã±", "ñ")
-data_ti$Program_mun %<>% str_replace_all("Ã", "i")
-data_ti$Program_mun %<>% str_replace_all("i³", "o")
-data_ti$Program_mun %<>% str_replace_all("iº", "u")
-data_ti$Program_mun %<>% str_replace_all("i¼", "ü")
 data_ti$Reading_time %<>% str_replace_all("ÃƒÂ¡", "a")
 
 # Re-coding Variables: correcting errors in database and creating factors when needed
@@ -196,19 +180,19 @@ data_ti$School_sector %<>% factor(labels= c("Public", "Private"))
 
 # Other Variables
 
-data_ti$Dpto_School %<>% factor()
+data_ti$Cod_dpto_School %<>% factor()
 data_ti$Sisben_Score %<>% as.numeric()
 
 # Response Variable (s): the response variable indicates weather the student accessed intermediate or not to higher education
 
-data_ti %<>% mutate(Immediate_Access = if_else(is.na(GID_HEI), 0,1))
+data_ti %<>% mutate(Immediate_Access = if_else(is.na(HEI_GID), 0,1))
 
 # HEI Level
 
-table(data_ti$Sector_HEI)
-data_ti %<>% mutate(Sector_HEI = if_else(Sector_HEI == "OFICIAL", "Public", 
-                                         if_else(Sector_HEI == "PRIVADA", "Private", Sector_HEI)))
-data_ti$Sector_HEI %<>% factor()
+table(data_ti$HEI_Sector)
+data_ti %<>% mutate(HEI_Sector = if_else(HEI_Sector == "OFICIAL", "Public", 
+                                         if_else(HEI_Sector == "PRIVADA", "Private", HEI_Sector)))
+data_ti$HEI_Sector %<>% factor()
 
 table(data_ti$HEI_Character)
 
@@ -230,4 +214,8 @@ data_ti$Program_level %<>% str_replace_all("Universitario", "Universitary")
 
 data_ti$Program_level %<>% factor(levels = c("Universitary", "Technological", "Technical"))
 
+# Age
+data_ti %<>% mutate(age = if_else(age > 13 & age < 21, 1, 0))
+table(is.na(data_ti$age))
 
+write.csv(data_ti, "Data_TI.csv")
