@@ -14,7 +14,8 @@ library(openxlsx)
 library(stringr)
 library(lubridate)
 library(tidyr)
-library(plotly)
+library(ggplot2)
+library(GGally)
 
 options(digits = 2)
 
@@ -162,3 +163,5 @@ cor_plot = data_ti %>% select('Sex (men)'=Sex, 'Theoretical age (17-21)' = age,
                               'm Complete undergrad.' = mothers_cud,
                               'm Posgraduate degree' = mothers_pd)
 
+# Storing variables names
+ggpairs(cor_plot, title="correlogram with ggpairs()")
