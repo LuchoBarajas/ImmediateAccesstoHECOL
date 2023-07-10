@@ -24,21 +24,16 @@ data_ti <- read.csv2("prueba_2.csv", encoding = "UTF-8")
 
 data_ti %<>% select(Date_of_Birth = t_FECHA_NACIMIENTO,Sex = t_GENERO,
                     Strata_ICFES = fami_estratovivienda,
-                    Strata_SIMAT = t_ESTRATO, Sisben_Score = puntaje_sisben_3,
                     SL_Student = estu_nse_individual,
                     Fathers_education = fami_educacionpadre,
                     Mothers_education = fami_educacionmadre, Internet = fami_tieneinternet,
                     Computer = fami_tienecomputador, Reading_time = estu_dedicacionlecturadiaria,
-                    Reading_percentile = percentil_lectura_critica, 
-                    Reading_performance = desemp_lectura_critica,
-                    Math_score = punt_matematicas, Math_Percentile = percentil_matematicas, 
-                    Math_performance = desemp_matematicas, 
-                    NaturalSci_score = punt_c_naturales, NaturalSci_percentile = percentil_c_naturales,
-                    NaturalSci_performance = desemp_c_naturales,
-                    SocialSci_score = punt_sociales_ciudadanas, SocialSci_percentile = percentil_sociales_ciudadanas,
-                    SocialSci_performance = desemp_sociales_ciudadanas, English_score = punt_ingles,
-                    English_percentile = percentil_ingles, English_performance = desemp_ingles,
-                    Global_score = punt_global,Global_percentile = percentil_global,
+                    Reading_percentile = percentil_lectura_critica,
+                    Math_Percentile = percentil_matematicas, 
+                    NaturalSci_percentile = percentil_c_naturales,
+                    SocialSci_percentile = percentil_sociales_ciudadanas,
+                    English_percentile = percentil_ingles, 
+                    Global_percentile = percentil_global,
                     Rurality = t_ZON_ALU,Cod_dpto_School = t_DPTO_CARGA,
                     School_sector = t_CTE_ID_SECTOR,Cod_mun_School =t_Divipola_MUNICIPIO,
                     HEI_ID_= t_ID_IES, HEI_GID = t_IES_PADRE, HEI_Sector = t_ORIGEN_IES, 
@@ -51,6 +46,7 @@ data_ti %<>% select(Date_of_Birth = t_FECHA_NACIMIENTO,Sex = t_GENERO,
 data_ti$Date_of_Birth = as.Date(data_ti$Date_of_Birth, format = "%d-%B-%y")
 data_ti %<>% mutate(age = difftime("2021-01-01", data_ti$Date_of_Birth, units = "weeks")/ 52.1775)
 data_ti$age %<>% as.integer()
+data_ti %<>% select(-Date_of_Birth)
 
 # Data cleaning 
 
@@ -135,33 +131,27 @@ data_ti$Reading_time %<>% str_replace_all("30 minutos o menos", "30 min or less"
 data_ti$Reading_time %<>% str_replace_all("Entre 30 y 60 minutos", "30 to 60 minutes") 
 data_ti$Reading_time %<>% str_replace_all("Entre 1 y 2 horas", "1 to 2 hours") 
 data_ti$Reading_time %<>% str_replace_all("Mas de 2 horas", "More than 2 hours") 
-data_ti$Reading_time %<>% str_replace_all("No leo por entretenimiento", "Does not read foe enternainment") 
+data_ti$Reading_time %<>% str_replace_all("No leo por entretenimiento", "Does not read for enternainment") 
 
 data_ti$Reading_time %<>% factor(levels = c("More than 2 hours", "1 to 2 hours", "30 to 60 minutes", "30 min or less",
                                             "Does not read foe enternainment"))
 
 # Standardized test results
 
-table(data_ti$Reading_performance)
-data_ti %<>% mutate(Reading_performance = if_else(Reading_performance > 4, NA_real_, Reading_performance)) 
+# table(data_ti$Reading_performance)
+# data_ti %<>% mutate(Reading_performance = if_else(Reading_performance > 4, NA_real_, Reading_performance)) 
 
-table(data_ti$Math_performance)
-data_ti %<>% mutate(Math_performance = if_else(Math_performance > 4, NA_real_, Math_performance))
+# table(data_ti$Math_performance)
+# data_ti %<>% mutate(Math_performance = if_else(Math_performance > 4, NA_real_, Math_performance))
 
-table(data_ti$NaturalSci_performance)
-data_ti %<>% mutate(NaturalSci_performance = if_else(NaturalSci_performance  > 4, NA_real_, NaturalSci_performance))
+# table(data_ti$NaturalSci_performance)
+# data_ti %<>% mutate(NaturalSci_performance = if_else(NaturalSci_performance  > 4, NA_real_, NaturalSci_performance))
 
-table(data_ti$English_performance)
-data_ti$English_performance %<>% str_replace_all("34", "")
+# table(data_ti$English_performance)
+# data_ti$English_performance %<>% str_replace_all("34", "")
 
-table(data_ti$English_performance)
-data_ti$English_performance %<>% factor(levels = c("B+","B1","A2","A1","A-"))
-
-# Strata SIMAT: Replacing Strata 0 and 9 for missing considering these strata do nor exist.
-
-table(data_ti$Strata_SIMAT)
-data_ti %<>% mutate(SEStrata = if_else(Strata_SIMAT == 0|Strata_SIMAT == 9, NA_real_, Strata_SIMAT))
-data_ti %<>% select(-Strata_SIMAT)
+# table(data_ti$English_performance)
+# data_ti$English_performance %<>% factor(levels = c("B+","B1","A2","A1","A-"))
 
 # Sex: 
 
@@ -181,7 +171,6 @@ data_ti$School_sector %<>% factor(labels= c("Public", "Private"))
 # Other Variables
 
 data_ti$Cod_dpto_School %<>% factor()
-data_ti$Sisben_Score %<>% as.numeric()
 
 # Response Variable (s): the response variable indicates weather the student accessed intermediate or not to higher education
 
@@ -217,5 +206,10 @@ data_ti$Program_level %<>% factor(levels = c("Universitary", "Technological", "T
 # Age
 data_ti %<>% mutate(age = if_else(age > 13 & age < 21, 1, 0))
 table(is.na(data_ti$age))
+
+# SL Student
+
+data_ti %<>% mutate(SL_Student = if_else(SL_Student > 4, NA, SL_Student))
+data_ti %<>% mutate(SL_Student = if_else(SL_Student != 1 & SL_Student != 2 & SL_Student != 3 & SL_Student != 4, NA, SL_Student))
 
 write.csv(data_ti, "Data_TI.csv")
