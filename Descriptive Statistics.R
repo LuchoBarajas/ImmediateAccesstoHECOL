@@ -16,6 +16,8 @@ library(lubridate)
 library(tidyr)
 library(ggplot2)
 library(GGally)
+library(gplots)
+library(RColorBrewer)
 
 options(digits = 2)
 
@@ -131,12 +133,12 @@ write.xlsx(descriptives, "Descriptive Statistics.xlsx")
   
 # Correlation Plot------------------------------------------------
 
-cor_plot = data_ti %>% select('Sex (men)'=Sex, 'Theoretical age (17-21)' = age,
-                              'Literacy percentile' = Reading_percentile,
-                              'Math Percentile' = Math_Percentile,
-                              'Natural Sci. Percentile' = NaturalSci_percentile,
-                              'Social Sci. Percentile' = SocialSci_percentile,
-                              'English Percentile' = English_percentile,
+cor_plot = data_ti %>% select('Sex (men)'=Sex, 'T. Age(17-21)' = age,
+                              'Literacy PCT' = Reading_percentile,
+                              'Math PCT' = Math_Percentile,
+                              'N Sci. PCT' = NaturalSci_percentile,
+                              'S Sci. PCT' = SocialSci_percentile,
+                              'English PCT' = English_percentile,
                               'School sector' = School_sector,
                               Rurality,
                               'SL Level 1' = SL_Student_1,
@@ -144,24 +146,40 @@ cor_plot = data_ti %>% select('Sex (men)'=Sex, 'Theoretical age (17-21)' = age,
                               'SL Level 3' = SL_Student_3,
                               'SL Level 4' = SL_Student_4, 
                               'f None' = fathers_none,
-                              'f Incomplete primary' = fathers_ip,
-                              'f Complete primary' = fathers_cp,
-                              'f Incomplete secondary' = fathers_is,
-                              'f Complete secondary' = fathers_cs,
-                              'f Incomplete tech. Edu.' = fathers_ite,
-                              'f Complete tech. Edu.' = fathers_cte,
-                              'f Incomplete undergrad.' = fathers_iud,
-                              'f Complete undergrad.' = fathers_cud,
-                              'f Posgraduate degree' = fathers_pd,
-                              'm Incomplete primary' = mothers_ip,
-                              'm Complete primary' = mothers_cp,
-                              'm Incomplete secondary' = mothers_is,
-                              'm Complete secondary' = mothers_cs,
-                              'm Incomplete tech. Edu.' = mothers_ite,
-                              'm Complete tech. Edu.' = mothers_cte,
-                              'm Incomplete undergrad.' = mothers_iud,
-                              'm Complete undergrad.' = mothers_cud,
-                              'm Posgraduate degree' = mothers_pd)
+                              'f I primary' = fathers_ip,
+                              'f C primary' = fathers_cp,
+                              'f I sec.' = fathers_is,
+                              'f C sec.' = fathers_cs,
+                              'f I techEd' = fathers_ite,
+                              'f C techEd.' = fathers_cte,
+                              'f I UG.' = fathers_iud,
+                              'f C UG.' = fathers_cud,
+                              'f Posgrad.' = fathers_pd,
+                              'm I primary' = mothers_ip,
+                              'm C primary' = mothers_cp,
+                              'm I sec.' = mothers_is,
+                              'm C sec.' = mothers_cs,
+                              'm I techEd.' = mothers_ite,
+                              'm C techEd.' = mothers_cte,
+                              'm I UG.' = mothers_iud,
+                              'm C UG.' = mothers_cud,
+                              'm Posgrad.' = mothers_pd)
 
-# Storing variables names
-ggpairs(cor_plot, title="correlogram with ggpairs()")
+# Correlation Plot
+
+  # Efficient way
+
+cor_matrix <- cor(cor_plot, use = "pairwise.complete.obs")
+coul <- colorRampPalette(brewer.pal(8, "Blues"))(25)
+heatmap(cor_matrix,Colv = NA, Rowv = NA, col= coul)
+
+# Correlation Plot 2
+
+  # Accurate way
+
+complete_data <- na.omit(cor_plot)
+cor_matrix_2 <- cor(complete_data)
+coul <- colorRampPalette(brewer.pal(8, "Blues"))(25)
+heatmap(cor_matrix_2,Colv = NA, Rowv = NA, col= coul)
+
+
