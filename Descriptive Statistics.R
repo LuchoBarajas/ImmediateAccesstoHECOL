@@ -18,6 +18,7 @@ library(ggplot2)
 library(GGally)
 library(gplots)
 library(RColorBrewer)
+library(heatmaply)
 
 options(digits = 2)
 
@@ -181,5 +182,42 @@ complete_data <- na.omit(cor_plot)
 cor_matrix_2 <- cor(complete_data)
 coul <- colorRampPalette(brewer.pal(8, "Blues"))(25)
 heatmap(cor_matrix_2,Colv = NA, Rowv = NA, col= coul)
+
+cor_matrix_2 %<>% as_tibble()
+
+write.xlsx(cor_matrix_2, "Correlation Matrix.xlsx")
+
+# Intermediate Access To higher Education plots
+
+iahe_rates = read.xlsx("IAHE Rates.xlsx")
+
+
+options(scipen = 999)
+iahe_rates_plot = ggplot(iahe_rates, aes(x= Cohort, y= Total.Students, fill = Immediate.Access)) + 
+  geom_bar(stat = "identity", position=position_dodge()) + 
+  coord_cartesian(ylim = c(0, max(iahe_rates$Total.Students)))+
+  theme(legend.position = 'bottom', panel.background = element_blank(), axis.text.x = element_blank(), 
+        axis.title.x = element_blank(), axis.ticks.x = element_blank(), legend.title = element_blank(),
+        legend.text = element_text(size = 12), axis.text.y = element_text(size= 12), axis.title.y = element_text(size = 12),
+        plot.caption = element_text(hjust=c(0,1), size = 12),
+        plot.caption.position = "plot", plot.title = element_text(hjust = 0.5, size = 16, face = "bold")) +
+  labs(title ="Immediate access to Higher Education 2018 -2021", y = "Total Students", caption = c("Source: Colombian Ministry of National Education", "Elaborated by: @luchobarajas_"))+
+  scale_fill_manual(values = c("High school graduates that access inmediately to HE" = "#01579b" ,
+                               "High school graduates that do not access" = "#2196f3" ))+
+  geom_text(aes(x= 2017, label="\nCohort 2017", y= 0), colour="black", angle=0, size = 4) +
+  geom_text(aes(x= 2018, label="\nCohort 2018", y= 0), colour="black", angle=0, size = 4) +
+  geom_text(aes(x= 2019, label="\nCohort 2019", y= 0), colour="black", angle=0, size = 4) +
+  geom_text(aes(x= 2020, label="\nCohort 2020", y= 0), colour="black", angle=0, size = 4) +
+  geom_text(aes(x= 2017, label="\n38.7 %", y= 150000), colour="white", angle=0, size = 6, hjust = 1.2)+
+  geom_text(aes(x= 2017, label="\n61.3 %", y= 150000), colour="white", angle=0, size = 6, hjust = -0.4)+
+  geom_text(aes(x= 2018, label="\n39.7 %", y= 150000), colour="white", angle=0, size = 6, hjust = 1.2)+
+  geom_text(aes(x= 2018, label="\n60.3 %", y= 150000), colour="white", angle=0, size = 6, hjust = -0.4)+
+  geom_text(aes(x= 2019, label="\n40 %", y= 150000), colour="white", angle=0, size = 6, hjust = 1.4)+
+  geom_text(aes(x= 2019, label="\n60 %", y= 150000), colour="white", angle=0, size = 6, hjust = -0.8)+
+  geom_text(aes(x= 2020, label="\n39.7 %", y= 150000), colour="white", angle=0, size = 6, hjust = 1.2)+
+  geom_text(aes(x= 2020, label="\n60.3 %", y= 150000), colour="white", angle=0, size = 6, hjust = -0.4)
+
+
+ggsave("Iahe_rates_2018-2021.png", iahe_rates_plot, width = 12, height = 7) 
 
 
