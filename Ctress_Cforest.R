@@ -18,6 +18,10 @@ library(ggparty)
 library(shapr)
 library(shapviz)
 library(iml)
+library(dineq)
+library(ggplot2)
+library(hrbrthemes)
+
 
 options(digits = 2)
 
@@ -72,16 +76,21 @@ data_ti$age %<>% as.factor()
 data_ti %<>% mutate(Immediate_Access = if_else(Immediate_Access == "IAHE",1,0))
 data_ti$Immediate_Access %<>% as.factor()
 
+data_ti %<>% select(Immediate_Access, everything())
 
 
 # Conditional Inference Tree---------------------------------------------------
 
-Sys.time()
+
 
 set.seed(1)
 ctree_model = ctree(Immediate_Access ~ Sex + SL_Student + 
                       Fathers_education + Mothers_education + Rurality + 
                       School_sector + age, data = data_ti)
+
+ctree_model_2 = ctree(Immediate_Access ~ Sex + SL_Student + 
+                      Fathers_education + Mothers_education + Rurality + 
+                      School_sector + age, data = data_ti, control = ctree_control(maxdepth = 4))
 
 
 
@@ -90,10 +99,10 @@ print(ctree_model)
 
 plt <- (
   ggparty(
-    ctree_model,
+    ctree_model_2,
     terminal_space = 0,
     add_vars       = list(intercept = "$node$info$nobs",
-                          beta      = "$data$wealth_destin")) +
+                          beta      = "$data$Immediate_Access")) +
     geom_edge(
       size = .5
     ) +
@@ -111,31 +120,23 @@ plt <- (
                        aes(label = ""),
                        aes(label = id)
       ),
-      line_gpar = list(list(size = 10),
-                       list(size = 8),
-                       list(size = 6),
-                       list(size      = 5,
+      line_gpar = list(list(size = 14),
+                       list(size = 12),
+                       list(size = 10),
+                       list(size      = 9,
                             col       = "black",
                             fontface  = "bold",
                             alignment = "left")
       ),
       ids = "inner"
     ) +
-    geom_node_label(
-      line_list = list(aes(label = paste("N =", round(intercept, 2))),
-                       aes(label = paste("Y =", round(beta, 2))),
-                       aes(label = ""),
-                       aes(label = id)
-      ),
-      line_gpar = list(list(size = 10),
-                       list(size = 10),
-                       list(size = 6),
-                       list(size = 5,
-                            col = "black",
-                            fontface = "bold",
-                            alignment = "left")),
-      ids     = "terminal",
-      nudge_y = -.05
+    geom_node_plot(gglist = list(geom_bar(aes(x = "", fill = Immediate_Access),
+                                          position = position_fill()),
+                                 xlab("")),
+                   # draw only one label for each axis
+                   shared_axis_labels = TRUE,
+                   # draw line between tree and legend
+                   legend_separator = TRUE
     ) +
     theme(
       legend.position   = "none"
@@ -148,29 +149,28 @@ plt <- (
 )
 
 ggsave(
-  "DTIAHE_2.png",
+  "DTIAHE_3.png",
   path    = "/Users/luchobarajas/Documents/OneDrive - London School of Economics/Capstone Project/ImmediateAccesstoHECOL/Estimations/",
   plot    = plt,
-  width   = 250,
-  height  = 50,
+  width   = 40,
+  height  = 25,
   units   = "cm",
   bg = "white",
   limitsize = F
 )
 
 
-var_importance = varimp(cforest_model)
-print(var_importance)
-
   # Disimilarity Index
 
-data_ti$y_predict_tree = predict(ctree_model, type = 'node') # Predicción de los nodos en los que está cada aobservación 
-P_iahe =  mean(as.numeric(data_ti$Immediate_Access)) - 1
-DIndex = data_ti %>% select(everything(), Node = y_predict_tree)
-DIndex %<>% group_by(Node) %>% summarise(weight = n()/nrow(data_ti), Pi = mean(as.numeric(Immediate_Access))-1)
-DIndex %<>% mutate(p_iahe = P_iahe)
+data_ti$types = predict(ctree_model, type = 'node')
 
-DIndex = sum(abs(DIndex$Pi- DIndex$p_iahe)*DIndex$weight) * (1/(2*P_iahe)) *100
+calculate_DIndex <- function(data,y){
+  data$y = as.numeric(y)
+  p = mean(data$y)-1
+  p_k = data %>% group_by(types) %>% summarise(p_k = mean(y)-1, w_k = n()/nrow(data), suma = abs(p_k-p))
+  DIndex = (1/(2*p)) * sum(p_k$w_k*p_k$suma)
+  return(DIndex)
+}
 
 
 # Conditional Random Forest-----------------------------------------------------
@@ -178,6 +178,9 @@ DIndex = sum(abs(DIndex$Pi- DIndex$p_iahe)*DIndex$weight) * (1/(2*P_iahe)) *100
 cforest_model = cforest(Immediate_Access ~ Sex + SL_Student + 
                           Fathers_education + Mothers_education + Rurality + 
                           School_sector + age, data = data_ti, ntree = 100)
+
+var_importance = varimp(cforest_model)
+print(var_importance)
 
 
   # Dissimilarity Index
@@ -190,6 +193,7 @@ p_iahe %<>% select(p_iahe = rep.P_iahe..476740.)
 iahe = D_Index_RF %>% select(Immediate_Access)
 
 types = types_Df %>% select(1)
+
 
 calculate_DIndex <- function(types,p_iahe,iahe){
   Tree_types = cbind(types,p_iahe,iahe)
@@ -213,8 +217,138 @@ for (i in 1:ncol(types_Df)) {
 
 # Print the results for each column
 Results_vector = as_tibble(result_vector)
-mean(result_vector)
+t.test(Results_vector$value)
 
+
+# Plotting the Dissimilariry Index results
+
+ggplot() + geom_histogram(data = Results_vector,aes(x=value), binwidth=0.05, fill="#01579b", color="#e9ecef", alpha=0.7) +
+  ggtitle("Bin size = 0.1") + theme(plot.title = element_text(size = 13), 
+                                                    panel.background = element_blank(),
+                                    panel.grid = element_blank(),
+                                    axis.line = element_blank()) +
+  labs(x = "Disimilarity Index", y = "Frecuency")+
+  scale_x_continuous(breaks = seq(15.5, 16.5, by = 0.2), labels = seq(15.5, 16.5, by = 0.2)) + 
+  geom_density(data = Results_vector, aes(x=value), alpha =.4, fill="#99FFFF") +
+  geom_vline(data = Results_vector,aes(xintercept = mean(value)),color="black", linetype="dashed", size= 0.5) +
+  geom_text(data = Results_vector, aes(x = 16.09, y = 20, label = "Mean = 16.2"))
+
+
+hist(Results_vector$value)
 
 # Shappley decomposition--------------------------------------------------------
 
+library(partykit)
+
+shapley_exante_binary <- function(data, target) {
+  formula <- as.formula(paste(target, "~ ."))
+  
+  set.seed(123)
+  # Total IOp
+  model <- ctree(formula, data = data)
+  
+  ## Get the total IOp value
+  y    <- data[, target]
+  x    <- data[, -which(names(data) == target)]
+  types <- predict(model, type = "node")
+  
+  data = cbind(data, types)
+  
+  IOp <- calculate_DIndex(data,y)
+  print(IOp)
+  total_IOp <- IOp
+  gc()
+  
+  # All possible combinations
+  v <- names(x)
+  print(v)
+  combinations <- lapply(1:length(v), function(x) combn(v, x, simplify = FALSE))
+  combinations <- unlist(combinations, recursive = FALSE)
+  
+  # Shapley Decomposition
+  shap_values <- NULL
+  m = 1
+  for (n in v) { # For each circumstance n in v
+    print(n)
+    j = 1
+    MC = NULL
+    for (i in (length(combinations)):1) { # for all possible combinations starting from the last one
+      if (n %in% combinations[[i]]) {   # If n is in that specific combination
+        if (length(combinations[[i]]) == 1) { # If the combination is just one circumstance
+          formula <- formula(paste(target, "~", paste(combinations[[i]], collapse = "+")))
+          
+          set.seed(123)
+          model_1 <- ctree(formula, data = data)
+          data_1 = data
+          data_1$types <- predict(model_1)
+          
+          # Compute IOp
+          IOp_1 <- calculate_DIndex(data_1,y)
+          
+          MC[j] <- IOp_1 - 0
+          j = j + 1
+          
+        } else { # If the combination is more than one circumstance
+          combination_vars <- which(!colnames(data) %in% c(combinations[[i]], target))
+          
+          formula <- formula(paste(target, "~", paste(combinations[[i]], collapse = "+"))) # All circumstances in combination
+          
+          # Put 1 (no variance) in all circumstances that are not part of the combination
+          data_1 <- data
+          for (col in combination_vars) {
+            data_1[, col] <- 1  
+          }
+          data_1$y <- y
+          set.seed(123)
+          model_1 <- ctree(formula, data = data_1)
+          data_1$types <- predict(model_1)
+          
+          IOp_1   <- calculate_DIndex(data_1, y)
+          
+          # Put 1 to our n circumstance
+          data_2 <- data_1
+          n_col <- which(colnames(data_2) == n)
+          
+          data_2[, n_col] <- 1
+          
+          set.seed(123)
+          model_2 <- ctree(formula, data = data_2)
+          data_2$types = predict(model_2)
+          IOp_2   <- calculate_DIndex(data_2,y)
+          
+          MC[j] <- IOp_1 - IOp_2 # Marginal contribution
+          j = j + 1
+        }
+      }
+    }
+    # Get the mean Marginal Contribution of circumstance n
+    shap_values[m] <- mean(MC)
+    m = m + 1
+  }
+  
+  # Normalize the Shapley values
+  max_v <- which(shap_values == max(shap_values))
+  n = 0
+  for (s in shap_values) {
+    n = n + 1
+    if (s < 0) {
+      shap_values[max_v] <- shap_values[max_v] + s
+      shap_values[n] <- 0
+    }
+  }
+  
+  normalized_shap_values <- shap_values / sum(shap_values, na.rm = T)
+  shap_values <- normalized_shap_values * total_IOp
+  # Return the Shapley values and normalized Shapley values
+  names(shap_values) <- colnames(x)
+  return(list(model                  = model,
+              total                  = total_IOp,
+              names                  = colnames(x),
+              shap_values            = shap_values,
+              normalized_shap_values = normalized_shap_values)
+  )
+}
+
+data_ti %<>% select(-types)
+
+shapley_exante_binary(data_ti, "Immediate_Access")
