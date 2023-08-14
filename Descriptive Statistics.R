@@ -4,7 +4,6 @@
 
 # Erase everything
 
-rm(list = ls())
 
 # Libraries and working directory 
 
@@ -135,11 +134,6 @@ write.xlsx(descriptives, "Descriptive Statistics.xlsx")
 # Correlation Plot------------------------------------------------
 
 cor_plot = data_ti %>% select('Sex (men)'=Sex, 'T. Age(17-21)' = age,
-                              'Literacy PCT' = Reading_percentile,
-                              'Math PCT' = Math_Percentile,
-                              'N Sci. PCT' = NaturalSci_percentile,
-                              'S Sci. PCT' = SocialSci_percentile,
-                              'English PCT' = English_percentile,
                               'School sector' = School_sector,
                               Rurality,
                               'SL Level 1' = SL_Student_1,
@@ -164,7 +158,8 @@ cor_plot = data_ti %>% select('Sex (men)'=Sex, 'T. Age(17-21)' = age,
                               'm C techEd.' = mothers_cte,
                               'm I UG.' = mothers_iud,
                               'm C UG.' = mothers_cud,
-                              'm Posgrad.' = mothers_pd)
+                              'm Posgrad.' = mothers_pd,
+                              'Global PCT' = Global_percentile)
 
 # Correlation Plot
 

@@ -4,7 +4,6 @@
 
 # Erase everything
 
-rm(list = ls())
 
 # Libraries and working directory 
 
@@ -204,12 +203,19 @@ data_ti$Program_level %<>% str_replace_all("Universitario", "Universitary")
 data_ti$Program_level %<>% factor(levels = c("Universitary", "Technological", "Technical"))
 
 # Age
-data_ti %<>% mutate(age = if_else(age > 13 & age < 21, 1, 0))
-table(is.na(data_ti$age))
+data_ti %<>% mutate(age = if_else(age > 13 & age < 21, "Theoretical Age", "Non Theoretical Age"))
+data_ti$age %<>% factor()
+
 
 # SL Student
 
 data_ti %<>% mutate(SL_Student = if_else(SL_Student > 4, NA, SL_Student))
 data_ti %<>% mutate(SL_Student = if_else(SL_Student != 1 & SL_Student != 2 & SL_Student != 3 & SL_Student != 4, NA, SL_Student))
+data_ti$SL_Student %<>% factor()
 
-write.csv(data_ti, "Data_TI.csv")
+# Inmmediate Access
+
+data_ti %<>% mutate(Immediate_Access= if_else(Immediate_Access == 1, "IAHE", "NIAHE"))
+data_ti$Immediate_Access %<>% as.factor()
+
+
